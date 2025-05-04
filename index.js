@@ -1,9 +1,10 @@
-require('dotenv').config();
-const FormData = require('form-data');
-const axios = require('axios');
-const path = require('path');
-const cliProgress = require('cli-progress');
-const fs = require('fs');
+import 'dotenv/config';
+import path from 'path';
+import cliProgress from 'cli-progress';
+import fs from 'fs';
+import {showDeletionMenu} from './deleteMenu.js';
+import {uploadFile} from './uploadFile.js';
+import {mockUploadFile} from './mockUploadFile.js';
 
 const SUPPORTED_VIDEO_TYPES = [
     'video/mp4',
@@ -32,63 +33,7 @@ if (!process.env.CLIENT_ID) {
 }
 
 const TIMEOUT = parseInt(process.env.UPLOAD_TIMEOUT) || 30000;
-
-async function uploadFile(filePath) {
-    const bar = progressBars.create(100, 0, {
-        filename: path.basename(filePath),
-        uploadedMB: 0,
-        fileSizeMB: 0
-    });
-
-    try {
-        const form = new FormData();
-        form.append('image', fs.createReadStream(filePath));
-        form.append('type', 'file');
-
-        const stats = fs.statSync(filePath);
-        const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
-
-        const response = await axios.post('https://api.imgur.com/3/image', form, {
-            headers: {
-                ...form.getHeaders(),
-                'Authorization': `Client-ID ${process.env.CLIENT_ID}`
-            },
-            timeout: TIMEOUT,
-            onUploadProgress: (progressEvent) => {
-                const percent = Math.round(
-                    (progressEvent.loaded / progressEvent.total) * 100
-                );
-
-                bar.update(percent, {
-                    uploadedMB: (percent / 100 * fileSizeMB).toFixed(2),
-                    fileSizeMB: fileSizeMB
-                });
-            }
-        });
-
-        bar.stop();
-        return {
-            success: true,
-            link: response.data.data.link,
-            id: response.data.data.id,
-            deletehash: response.data.data.deletehash,
-        };
-    } catch (error) {
-        bar.stop();
-
-        let errorMessage;
-        if (error.code === 'ECONNABORTED') {
-            errorMessage = `Timeout after ${TIMEOUT/1000}s`;
-        } else {
-            errorMessage = error.response?.data?.data?.error || error.message;
-        }
-
-        return {
-            success: false,
-            error: errorMessage
-        };
-    }
-}
+const uploadFn = process.env.TEST_MODE === 'true' ? mockUploadFile : uploadFile;
 
 function validateFileType(filePath) {
     const fileExt = path.extname(filePath).toLowerCase();
@@ -141,7 +86,7 @@ function validateFileType(filePath) {
             continue;
         }
 
-        const result = await uploadFile(file);
+        const result = await uploadFn(file, progressBars, TIMEOUT);
         if (result.success) {
             console.log(`\nUpload success: ${result.link}`);
             results.push({ file, link: result.link, id: result.id, deletehash: result.deletehash });
@@ -163,5 +108,9 @@ function validateFileType(filePath) {
             console.log(`${i + 1}: ${result.link}`);
         }
     }
+
+    // Show the deletion menu
+    await showDeletionMenu(results, process.env.CLIENT_ID);
+
     process.exit(exitCode);
 })();
