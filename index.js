@@ -5,6 +5,7 @@ import fs from 'fs';
 import {showDeletionMenu} from './deleteMenu.js';
 import {uploadFile} from './uploadFile.js';
 import {mockUploadFile} from './mockUploadFile.js';
+import {verifyImgurLink} from "./verifyImgurLink.js";
 
 const SUPPORTED_VIDEO_TYPES = [
     'video/mp4',
@@ -99,13 +100,24 @@ function validateFileType(filePath) {
 
     progressBars.stop();
 
+    if (process.env.VERIFY_UPLOAD === 'true' && !results.every(r => r.error)) {
+        console.log('\nVerifying uploads...');
+        for (const result of results) {
+            result.isValid = false;
+
+            if (result.link) {
+                result.isValid = await verifyImgurLink(result.id);
+            }
+        }
+    }
+
     console.log('\nResults:');
     for (let i = 0; i < results.length; i++) {
         const result = results[i];
         if (result.error) {
             console.log(`${i + 1}: ${result.file} - Error: ${result.error}`);
         } else {
-            console.log(`${i + 1}: ${result.link}`);
+            console.log(`${result.isValid ? i + 1 : 'x'}: ${result.link}`);
         }
     }
 

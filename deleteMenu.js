@@ -26,16 +26,30 @@ async function showDeletionMenu(results, clientId) {
         return;
     }
 
+    // Find invalid uploads where isValid is false
+    const invalidUploads = successfulUploads.filter(r => r.isValid === false);
+
+    // Build menu choices
+    const menuChoices = [
+        {name: 'Keep all uploads', value: 'keep'},
+        {name: 'Delete all uploads', value: 'deleteAll'},
+        {name: 'Select uploads to delete', value: 'selectDelete'}
+    ];
+
+    // Add option to delete invalid uploads only if there are any
+    if (invalidUploads.length > 0) {
+        menuChoices.push({
+            name: `Delete invalid uploads (${invalidUploads.length})`,
+            value: 'deleteInvalid'
+        });
+    }
+
     const {action} = await inquirer.prompt([
         {
             type: 'list',
             name: 'action',
             message: 'What would you like to do with the uploaded images?',
-            choices: [
-                {name: 'Keep all uploads', value: 'keep'},
-                {name: 'Delete all uploads', value: 'deleteAll'},
-                {name: 'Select uploads to delete', value: 'selectDelete'}
-            ]
+            choices: menuChoices
         }
     ]);
 
@@ -65,6 +79,12 @@ async function showDeletionMenu(results, clientId) {
                 const result = await deleteImage(deletehash, clientId);
                 console.log(`${upload.link}: ${result.success ? 'Deleted' : `Failed - ${result.error}`}`);
             }
+        }
+    } else if (action === 'deleteInvalid') {
+        console.log('Deleting invalid uploads...');
+        for (const upload of invalidUploads) {
+            const result = await deleteImage(upload.deletehash, clientId);
+            console.log(`${upload.link}: ${result.success ? 'Deleted' : `Failed - ${result.error}`}`);
         }
     }
 }

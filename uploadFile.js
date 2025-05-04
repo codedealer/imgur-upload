@@ -12,7 +12,7 @@ async function uploadFile(filePath, progressBars, TIMEOUT = 30000) {
 
     try {
         const form = new FormData();
-        form.append('image', fs.createReadStream(filePath));
+        form.append('video', fs.createReadStream(filePath));
         form.append('type', 'file');
 
         const stats = fs.statSync(filePath);
