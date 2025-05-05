@@ -109,6 +109,12 @@ function validateFileType(filePath) {
                 result.isValid = await verifyImgurLink(result.id);
             }
         }
+    } else if (process.env.VERIFY_UPLOAD !== 'true') {
+        results.forEach(result => {
+            if (result.deletehash) {
+                result.isValid = true;
+            }
+        });
     }
 
     console.log('\nResults:');
