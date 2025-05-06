@@ -2,10 +2,11 @@ import 'dotenv/config';
 import path from 'path';
 import cliProgress from 'cli-progress';
 import fs from 'fs';
-import {showDeletionMenu} from './deleteMenu.js';
-import {uploadFile} from './uploadFile.js';
-import {mockUploadFile} from './mockUploadFile.js';
-import {verifyImgurLink} from "./verifyImgurLink.js";
+import { showDeletionMenu } from './deleteMenu';
+import { uploadFile } from './uploadFile';
+import { mockUploadFile } from './mockUploadFile';
+import { verifyImgurLink } from "./verifyImgurLink";
+import { FileResult } from './types';
 
 const SUPPORTED_VIDEO_TYPES = [
     'video/mp4',
@@ -33,16 +34,16 @@ if (!process.env.CLIENT_ID) {
     process.exit(2);
 }
 
-const TIMEOUT = parseInt(process.env.UPLOAD_TIMEOUT) || 30000;
+const TIMEOUT = parseInt(process.env.UPLOAD_TIMEOUT || '30000');
 const uploadFn = process.env.TEST_MODE === 'true' ? mockUploadFile : uploadFile;
 
 // Validate and parse MAX_FILE_SIZE_MB
-const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB) || 0;
+const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '0');
 const hasFileSizeLimit = MAX_FILE_SIZE_MB > 0;
 
-function validateFileType(filePath) {
+function validateFileType (filePath: string): boolean {
     const fileExt = path.extname(filePath).toLowerCase();
-    let mimeType;
+    let mimeType: string | null;
 
     switch (fileExt) {
         case '.mp4': mimeType = 'video/mp4'; break;
@@ -81,7 +82,7 @@ function validateFileType(filePath) {
         console.log(`Maximum file size: ${MAX_FILE_SIZE_MB} MB`);
     }
 
-    const results = [];
+    const results: FileResult[] = [];
     for (const file of files) {
         if (!fs.existsSync(file)) {
             console.error(`\nError: File not found - ${file}`);
@@ -97,7 +98,13 @@ function validateFileType(filePath) {
         const result = await uploadFn(file, progressBars, TIMEOUT, MAX_FILE_SIZE_MB);
         if (result.success) {
             console.log(`\nUpload success: ${result.link}`);
-            results.push({ file, link: result.link, id: result.id, deletehash: result.deletehash });
+            results.push({
+                file,
+                link: result.link,
+                id: result.id,
+                deletehash: result.deletehash,
+                isValid: false // Will be updated later if verification is enabled
+            });
         } else {
             console.log(`\nUpload failed: ${result.error}`);
             exitCode = 1;
@@ -107,12 +114,10 @@ function validateFileType(filePath) {
 
     progressBars.stop();
 
-    if (process.env.VERIFY_UPLOAD === 'true' && !results.every(r => r.error)) {
+    if (process.env.VERIFY_UPLOAD === 'true' && results.some(r => r.link)) {
         console.log('\nVerifying uploads...');
         for (const result of results) {
-            result.isValid = false;
-
-            if (result.link) {
+            if (result.link && result.id) {
                 result.isValid = await verifyImgurLink(result.id);
             }
         }
@@ -135,7 +140,9 @@ function validateFileType(filePath) {
     }
 
     // Show the deletion menu
-    await showDeletionMenu(results, process.env.CLIENT_ID);
+    if (process.env.CLIENT_ID) {
+        await showDeletionMenu(results, process.env.CLIENT_ID);
+    }
 
     process.exit(exitCode);
 })();

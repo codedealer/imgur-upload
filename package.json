@@ -1,22 +1,47 @@
 {
   "name": "imgur-upload",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "type": "module",
+  "description": "Imgur video uploader",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rimraf bin && mkdir bin",
+    "build": "tsc",
+    "package": "pnpm run clean && pnpm run build && pkg . --out-path bin",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
+  "pkg": {
+    "scripts": "dist/**/*.js",
+    "assets": [
+      "node_modules/**/*",
+      ".env"
+    ],
+    "targets": [
+      "node20-win-x64"
+    ]
+  },
+  "bin": {
+    "imgur-upload": "dist/index.js"
+  },
   "license": "ISC",
   "packageManager": "pnpm@9.15.2+sha512.93e57b0126f0df74ce6bff29680394c0ba54ec47246b9cf321f0121d8d9bb03f750a705f24edc3c1180853afd7c2c3b94196d0a3d53d3e069d9e2793ef11f321",
   "dependencies": {
     "axios": "^1.9.0",
     "cli-progress": "^3.12.0",
-    "clipboardy": "^4.0.0",
+    "copy-paste": "^2.1.1",
     "dotenv": "^16.5.0",
     "form-data": "^4.0.2",
     "inquirer": "^12.6.0"
+  },
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
+    "@types/copy-paste": "^1.1.33",
+    "@types/node": "^22.15.12",
+    "@yao-pkg/pkg": "^6.4.1",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }

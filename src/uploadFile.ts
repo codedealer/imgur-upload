@@ -2,8 +2,14 @@ import path from "path";
 import FormData from "form-data";
 import fs from "fs";
 import axios from "axios";
+import { ProgressBars, UploadResult } from "./types";
 
-async function uploadFile(filePath, progressBars, TIMEOUT = 30000, MAX_FILE_SIZE_MB = 0) {
+async function uploadFile (
+  filePath: string,
+  progressBars: ProgressBars,
+  TIMEOUT: number = 30000,
+  MAX_FILE_SIZE_MB: number = 0
+): Promise<UploadResult> {
     const bar = progressBars.create(100, 0, {
         filename: path.basename(filePath),
         uploadedMB: 0,
@@ -34,12 +40,13 @@ async function uploadFile(filePath, progressBars, TIMEOUT = 30000, MAX_FILE_SIZE
             },
             timeout: TIMEOUT,
             onUploadProgress: (progressEvent) => {
+                const total = progressEvent.total || parseInt(fileSizeMB) * 1024 * 1024;
                 const percent = Math.round(
-                    (progressEvent.loaded / progressEvent.total) * 100
+                  (progressEvent.loaded / total) * 100
                 );
 
                 bar.update(percent, {
-                    uploadedMB: (percent / 100 * fileSizeMB).toFixed(2),
+                    uploadedMB: (percent / 100 * parseFloat(fileSizeMB)).toFixed(2),
                     fileSizeMB: fileSizeMB
                 });
             }
@@ -52,7 +59,7 @@ async function uploadFile(filePath, progressBars, TIMEOUT = 30000, MAX_FILE_SIZE
             id: response.data.data.id,
             deletehash: response.data.data.deletehash,
         };
-    } catch (error) {
+    } catch (error: any) {
         bar.stop();
 
         let errorMessage;
@@ -69,4 +76,4 @@ async function uploadFile(filePath, progressBars, TIMEOUT = 30000, MAX_FILE_SIZE
     }
 }
 
-export {uploadFile};
+export { uploadFile };

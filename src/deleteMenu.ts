@@ -1,9 +1,10 @@
 import inquirer from 'inquirer';
 import axios from 'axios';
-import clipboardy from 'clipboardy';
+import { DeleteResult, FileResult } from './types';
+import { copy } from 'copy-paste';
 
 // Delete an image using the deletehash
-async function deleteImage(deletehash, clientId) {
+async function deleteImage (deletehash: string, clientId: string): Promise<DeleteResult> {
     try {
         const response = await axios.delete(`https://api.imgur.com/3/image/${deletehash}`, {
             headers: {
@@ -11,7 +12,7 @@ async function deleteImage(deletehash, clientId) {
             }
         });
         return {success: true, status: response.data.status};
-    } catch (error) {
+    } catch (error: any) {
         return {
             success: false,
             error: error.response?.data?.data?.error || error.message
@@ -20,7 +21,7 @@ async function deleteImage(deletehash, clientId) {
 }
 
 // Show deletion menu and handle user choices
-async function showDeletionMenu(results, clientId) {
+async function showDeletionMenu (results: FileResult[], clientId: string): Promise<void> {
     let continueMenu = true;
 
     while (continueMenu) {
@@ -66,10 +67,12 @@ async function showDeletionMenu(results, clientId) {
 
         if (action === 'deleteAll') {
             console.log('Deleting all uploads...');
-            const deletedIndices = [];
+            const deletedIndices: number[] = [];
 
             for (let i = 0; i < successfulUploads.length; i++) {
                 const upload = successfulUploads[i];
+                if (!upload.deletehash) continue;
+                
                 const result = await deleteImage(upload.deletehash, clientId);
                 console.log(`${upload.link}: ${result.success ? 'Deleted' : `Failed - ${result.error}`}`);
 
@@ -106,12 +109,12 @@ async function showDeletionMenu(results, clientId) {
 
             if (toDelete.length > 0) {
                 console.log('Deleting selected uploads...');
-                const deletedIndices = [];
+                const deletedIndices: number[] = [];
 
                 for (const deletehash of toDelete) {
                     const upload = successfulUploads.find(u => u.deletehash === deletehash);
                     const result = await deleteImage(deletehash, clientId);
-                    console.log(`${upload.link}: ${result.success ? 'Deleted' : `Failed - ${result.error}`}`);
+                    console.log(`${upload?.link}: ${result.success ? 'Deleted' : `Failed - ${result.error}`}`);
 
                     if (result.success) {
                         // Find the index in the original results array
@@ -129,9 +132,11 @@ async function showDeletionMenu(results, clientId) {
             }
         } else if (action === 'deleteInvalid') {
             console.log('Deleting invalid uploads...');
-            const deletedIndices = [];
+            const deletedIndices: number[] = [];
 
             for (const upload of invalidUploads) {
+                if (!upload.deletehash) continue;
+                
                 const result = await deleteImage(upload.deletehash, clientId);
                 console.log(`${upload.link}: ${result.success ? 'Deleted' : `Failed - ${result.error}`}`);
 
@@ -171,9 +176,9 @@ async function showDeletionMenu(results, clientId) {
                     }
                 }
 
-                await clipboardy.write(linkText);
+                copy(linkText.trim());
                 console.log('Links copied to clipboard!');
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Failed to copy links to clipboard:', error.message);
             }
         } else if (action === 'quit') {
