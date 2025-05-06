@@ -3,7 +3,7 @@ import FormData from "form-data";
 import fs from "fs";
 import axios from "axios";
 
-async function uploadFile(filePath, progressBars, TIMEOUT = 30000) {
+async function uploadFile(filePath, progressBars, TIMEOUT = 30000, MAX_FILE_SIZE_MB = 0) {
     const bar = progressBars.create(100, 0, {
         filename: path.basename(filePath),
         uploadedMB: 0,
@@ -11,12 +11,21 @@ async function uploadFile(filePath, progressBars, TIMEOUT = 30000) {
     });
 
     try {
+        const stats = fs.statSync(filePath);
+        const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+
+        // Check file size limit if specified
+        if (MAX_FILE_SIZE_MB > 0 && parseFloat(fileSizeMB) > MAX_FILE_SIZE_MB) {
+            bar.stop();
+            return {
+                success: false,
+                error: `File exceeds maximum size of ${MAX_FILE_SIZE_MB} MB`
+            };
+        }
+
         const form = new FormData();
         form.append('video', fs.createReadStream(filePath));
         form.append('type', 'file');
-
-        const stats = fs.statSync(filePath);
-        const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
 
         const response = await axios.post('https://api.imgur.com/3/image', form, {
             headers: {

@@ -36,6 +36,10 @@ if (!process.env.CLIENT_ID) {
 const TIMEOUT = parseInt(process.env.UPLOAD_TIMEOUT) || 30000;
 const uploadFn = process.env.TEST_MODE === 'true' ? mockUploadFile : uploadFile;
 
+// Validate and parse MAX_FILE_SIZE_MB
+const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB) || 0;
+const hasFileSizeLimit = MAX_FILE_SIZE_MB > 0;
+
 function validateFileType(filePath) {
     const fileExt = path.extname(filePath).toLowerCase();
     let mimeType;
@@ -73,6 +77,9 @@ function validateFileType(filePath) {
     }
 
     console.log(`Upload timeout set to: ${TIMEOUT/1000} seconds`);
+    if (hasFileSizeLimit) {
+        console.log(`Maximum file size: ${MAX_FILE_SIZE_MB} MB`);
+    }
 
     const results = [];
     for (const file of files) {
@@ -87,7 +94,7 @@ function validateFileType(filePath) {
             continue;
         }
 
-        const result = await uploadFn(file, progressBars, TIMEOUT);
+        const result = await uploadFn(file, progressBars, TIMEOUT, MAX_FILE_SIZE_MB);
         if (result.success) {
             console.log(`\nUpload success: ${result.link}`);
             results.push({ file, link: result.link, id: result.id, deletehash: result.deletehash });
