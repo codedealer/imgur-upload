@@ -15,8 +15,7 @@
   "pkg": {
     "scripts": "dist/**/*.js",
     "assets": [
-      "node_modules/**/*",
-      ".env"
+      "node_modules/**/*"
     ],
     "targets": [
       "node20-win-x64"
