@@ -3,6 +3,7 @@ import FormData from "form-data";
 import fs from "fs";
 import axios from "axios";
 import { ProgressBars, UploadResult } from "./types";
+import config from "./config";
 
 async function uploadFile (
   filePath: string,
@@ -36,7 +37,7 @@ async function uploadFile (
         const response = await axios.post('https://api.imgur.com/3/image', form, {
             headers: {
                 ...form.getHeaders(),
-                'Authorization': `Client-ID ${process.env.CLIENT_ID}`
+                'Authorization': `Client-ID ${config.clientId}`
             },
             timeout: TIMEOUT,
             onUploadProgress: (progressEvent) => {

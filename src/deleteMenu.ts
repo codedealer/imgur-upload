@@ -156,7 +156,7 @@ async function showDeletionMenu (results: FileResult[], clientId: string): Promi
         } else if (action === 'copyLinks') {
             try {
                 // Number of links per row when copying to clipboard (default: 5)
-                const linksPerRow = 5;
+                const groupLinksBy = 5;
 
                 // Format links as requested: links with newlines after each group
                 const validLinks = results
@@ -166,13 +166,11 @@ async function showDeletionMenu (results: FileResult[], clientId: string): Promi
                 // Group links by the specified number per row
                 let linkText = '';
                 for (let i = 0; i < validLinks.length; i++) {
-                    linkText += validLinks[i];
-
-                    // Add a newline after each group of linksPerRow or at the end
-                    if ((i + 1) % linksPerRow === 0 || i === validLinks.length - 1) {
+                    // Add one link per row
+                    linkText += validLinks[i] + '\n';
+                    // After each groupLinksBy links, insert an additional newline
+                    if ((i + 1) % groupLinksBy === 0) {
                         linkText += '\n';
-                    } else {
-                        linkText += ' ';
                     }
                 }
 

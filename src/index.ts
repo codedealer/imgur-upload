@@ -7,6 +7,8 @@ import { uploadFile } from './uploadFile';
 import { mockUploadFile } from './mockUploadFile';
 import { verifyImgurLink } from "./verifyImgurLink";
 import { FileResult } from './types';
+import { pause } from './utils';
+import config from './config';
 
 const SUPPORTED_VIDEO_TYPES = [
     'video/mp4',
@@ -27,19 +29,6 @@ const progressBars = new cliProgress.MultiBar({
     barCompleteChar: '\u2588',
     barIncompleteChar: '\u2591',
 }, cliProgress.Presets.shades_grey);
-
-// Validate configuration
-if (!process.env.CLIENT_ID) {
-    console.error('Error: CLIENT_ID not found in .env file');
-    process.exit(2);
-}
-
-const TIMEOUT = parseInt(process.env.UPLOAD_TIMEOUT || '30000');
-const uploadFn = process.env.TEST_MODE === 'true' ? mockUploadFile : uploadFile;
-
-// Validate and parse MAX_FILE_SIZE_MB
-const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '0');
-const hasFileSizeLimit = MAX_FILE_SIZE_MB > 0;
 
 function validateFileType (filePath: string): boolean {
     const fileExt = path.extname(filePath).toLowerCase();
@@ -67,15 +56,30 @@ function validateFileType (filePath: string): boolean {
 }
 
 (async () => {
-    const files = process.argv.slice(2);
     let exitCode = 0;
+    // Validate configuration
+    const isPackaged = !!('pkg' in process || process.versions.pkg);
+
+    if (!config.clientId) {
+        console.error('Error: CLIENT_ID not found in configuration');
+        await pause();
+        process.exit(2);
+    }
+
+    const files = process.argv.slice(2);
 
     if (files.length === 0) {
         console.error('Error: No files provided');
         console.log('Usage: drag files onto the executable or');
         console.log('       run from command line: uploader.exe file1.mp4 file2.mov');
+        await pause();
         process.exit(1);
     }
+
+    const TIMEOUT = config.uploadTimeout;
+    const uploadFn = config.testMode ? mockUploadFile : uploadFile;
+    const MAX_FILE_SIZE_MB = config.maxFileSizeMb;
+    const hasFileSizeLimit = MAX_FILE_SIZE_MB > 0;
 
     console.log(`Upload timeout set to: ${TIMEOUT/1000} seconds`);
     if (hasFileSizeLimit) {
@@ -114,14 +118,14 @@ function validateFileType (filePath: string): boolean {
 
     progressBars.stop();
 
-    if (process.env.VERIFY_UPLOAD === 'true' && results.some(r => r.link)) {
+    if (config.verifyUpload && results.some(r => r.link)) {
         console.log('\nVerifying uploads...');
         for (const result of results) {
             if (result.link && result.id) {
                 result.isValid = await verifyImgurLink(result.id);
             }
         }
-    } else if (process.env.VERIFY_UPLOAD !== 'true') {
+    } else if (!config.verifyUpload) {
         results.forEach(result => {
             if (result.deletehash) {
                 result.isValid = true;
@@ -140,8 +144,10 @@ function validateFileType (filePath: string): boolean {
     }
 
     // Show the deletion menu
-    if (process.env.CLIENT_ID) {
-        await showDeletionMenu(results, process.env.CLIENT_ID);
+    if (config.clientId) {
+        await showDeletionMenu(results, config.clientId);
+    } else {
+        await pause();
     }
 
     process.exit(exitCode);
