@@ -2,6 +2,7 @@ import inquirer from 'inquirer';
 import axios from 'axios';
 import { DeleteResult, FileResult } from './types';
 import { copy } from 'copy-paste';
+import { pause } from "./utils";
 
 // Delete an image using the deletehash
 async function deleteImage (deletehash: string, clientId: string): Promise<DeleteResult> {
@@ -28,7 +29,8 @@ async function showDeletionMenu (results: FileResult[], clientId: string): Promi
         // Only show deletion options if we have successful uploads
         const successfulUploads = results.filter(r => r.deletehash);
         if (successfulUploads.length === 0) {
-            console.log('No uploads available for deletion.');
+            console.log('No successful uploads to manage.');
+            await pause();
             return;
         }
 
@@ -49,8 +51,9 @@ async function showDeletionMenu (results: FileResult[], clientId: string): Promi
             });
         }
 
-        if (successfulUploads.length > 0) {
-            menuChoices.push({name: 'Copy all links to clipboard', value: 'copyLinks'});
+        const validUploads = successfulUploads.filter(r => r.isValid);
+        if (validUploads.length > 0) {
+            menuChoices.unshift({ name: 'Copy valid links to clipboard', value: 'copyLinks' });
         }
 
         // Add quit option
@@ -159,9 +162,7 @@ async function showDeletionMenu (results: FileResult[], clientId: string): Promi
                 const groupLinksBy = 5;
 
                 // Format links as requested: links with newlines after each group
-                const validLinks = results
-                    .filter(r => r.link) // Only include results with a link
-                    .map(r => r.link);   // Extract just the link
+                const validLinks = validUploads.map(r => r.link);
 
                 // Group links by the specified number per row
                 let linkText = '';

@@ -4,6 +4,7 @@ import fs from "fs";
 import axios from "axios";
 import { ProgressBars, UploadResult } from "./types";
 import config from "./config";
+import { trimFileName } from "./utils";
 
 async function uploadFile (
   filePath: string,
@@ -12,7 +13,7 @@ async function uploadFile (
   MAX_FILE_SIZE_MB: number = 0
 ): Promise<UploadResult> {
     const bar = progressBars.create(100, 0, {
-        filename: path.basename(filePath),
+        filename: trimFileName(path.basename(filePath)),
         uploadedMB: 0,
         fileSizeMB: 0
     });
@@ -41,7 +42,7 @@ async function uploadFile (
             },
             timeout: TIMEOUT,
             onUploadProgress: (progressEvent) => {
-                const total = progressEvent.total || parseInt(fileSizeMB) * 1024 * 1024;
+                const total = progressEvent.total && progressEvent.total > 0 ? progressEvent.total : 1;
                 const percent = Math.round(
                   (progressEvent.loaded / total) * 100
                 );

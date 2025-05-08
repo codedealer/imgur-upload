@@ -57,8 +57,6 @@ function validateFileType (filePath: string): boolean {
 
 (async () => {
     let exitCode = 0;
-    // Validate configuration
-    const isPackaged = !!('pkg' in process || process.versions.pkg);
 
     if (!config.clientId) {
         console.error('Error: CLIENT_ID not found in configuration');
@@ -107,7 +105,7 @@ function validateFileType (filePath: string): boolean {
                 link: result.link,
                 id: result.id,
                 deletehash: result.deletehash,
-                isValid: false // Will be updated later if verification is enabled
+                isValid: true // Will be updated later if verification is enabled
             });
         } else {
             console.log(`\nUpload failed: ${result.error}`);
@@ -120,17 +118,15 @@ function validateFileType (filePath: string): boolean {
 
     if (config.verifyUpload && results.some(r => r.link)) {
         console.log('\nVerifying uploads...');
-        for (const result of results) {
-            if (result.link && result.id) {
-                result.isValid = await verifyImgurLink(result.id);
+        if (config.testMode) {
+            console.log('Test mode: Skipping verification');
+        } else {
+            for (const result of results) {
+                if (result.link && result.id) {
+                    result.isValid = await verifyImgurLink(result.id);
+                }
             }
         }
-    } else if (!config.verifyUpload) {
-        results.forEach(result => {
-            if (result.deletehash) {
-                result.isValid = true;
-            }
-        });
     }
 
     console.log('\nResults:');
@@ -139,7 +135,7 @@ function validateFileType (filePath: string): boolean {
         if (result.error) {
             console.log(`${i + 1}: ${result.file} - Error: ${result.error}`);
         } else {
-            console.log(`${result.isValid ? i + 1 : 'x'}: ${result.link}`);
+            console.log(`${result.isValid ? i + 1 : 'x'}: ${result.link}${result.isValid ? '' : ' - Invalid'}`);
         }
     }
 
