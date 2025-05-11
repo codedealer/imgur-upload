@@ -7,6 +7,7 @@ export interface ImgurConfig {
   verifyUpload: boolean;
   maxFileSizeMb: number;
   testMode: boolean;
+  concurrentUploads: number;
 }
 
 export function loadConfig (): ImgurConfig {
@@ -30,6 +31,7 @@ export function loadConfig (): ImgurConfig {
           verifyUpload: false,
           maxFileSizeMb: 0,
           testMode: false,
+          concurrentUploads: 1,
         };
         fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
         console.log(`Default configuration file created at ${configPath}. Please update it with correct values.`);
@@ -51,6 +53,7 @@ export function loadConfig (): ImgurConfig {
     testMode: config.testMode !== undefined
       ? config.testMode
       : process.env.TEST_MODE === 'true',
+    concurrentUploads: Math.max(1, config.concurrentUploads || parseInt(process.env.CONCURRENT_UPLOADS || '1')),
   };
 }
 
