@@ -4,6 +4,7 @@ import { verifyImgurLink } from "./verifyImgurLink";
 import { pause } from './utils';
 import config from './config';
 import { uploadFiles } from "./uploadFiles";
+import { getMetadata } from "./getMetadata";
 
 (async () => {
     let exitCode = 0;
@@ -16,7 +17,10 @@ import { uploadFiles } from "./uploadFiles";
 
     const files = process.argv.slice(2);
 
-    if (files.length === 0) {
+    // catch json files
+    const videoFiles = files.filter(file => !file.toLowerCase().endsWith('.json'));
+    if (videoFiles.length === 0) {
+
         console.error('Error: No files provided');
         console.log('Usage: drag files onto the executable or');
         console.log('       run from command line: uploader.exe file1.mp4 file2.mov');
@@ -24,7 +28,26 @@ import { uploadFiles } from "./uploadFiles";
         process.exit(1);
     }
 
-    const results = await uploadFiles(files);
+    const jsonFiles = files.filter(file => file.toLowerCase().endsWith('.json'));
+    if (jsonFiles.length > 1) {
+        console.warn('Multiple JSON files provided. Only the first one will be used.');
+    }
+    const jsonFile = jsonFiles.length > 0 ? jsonFiles[0] : null;
+    const metadata = jsonFile ? getMetadata(jsonFile) : null;
+
+    if (metadata) {
+        if (metadata.videoUrl) {
+            console.log(`Video URL: ${metadata.videoUrl}`);
+        }
+        if (metadata.videoTitle) {
+            console.log(`Video Title: ${metadata.videoTitle}`);
+        }
+        if (metadata.titleSuffix) {
+            console.log(`Title Suffix: ${metadata.titleSuffix}`);
+        }
+    }
+
+    const results = await uploadFiles(videoFiles);
 
     if (config.verifyUpload && results.some(r => r.link)) {
         console.log('\nVerifying uploads...');
@@ -51,7 +74,7 @@ import { uploadFiles } from "./uploadFiles";
 
     // Show the deletion menu
     if (config.clientId) {
-        await showDeletionMenu(results, config.clientId);
+        await showDeletionMenu(results, config.clientId, metadata);
     } else {
         await pause();
     }

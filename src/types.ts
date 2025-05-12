@@ -23,5 +23,11 @@ export interface FileResult {
   isValid?: boolean;
 }
 
+export interface Metadata {
+  videoUrl?: string;
+  videoTitle?: string;
+  titleSuffix?: string;
+}
+
 export type ProgressBars = MultiBar;
 export type ProgressBar = SingleBar;

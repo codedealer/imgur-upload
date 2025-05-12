@@ -1,6 +1,6 @@
 import inquirer from 'inquirer';
 import axios from 'axios';
-import { DeleteResult, FileResult } from './types';
+import { DeleteResult, FileResult, Metadata } from './types';
 import { copy } from 'copy-paste';
 import { pause } from "./utils";
 
@@ -22,7 +22,7 @@ async function deleteImage (deletehash: string, clientId: string): Promise<Delet
 }
 
 // Show deletion menu and handle user choices
-async function showDeletionMenu (results: FileResult[], clientId: string): Promise<void> {
+async function showDeletionMenu (results: FileResult[], clientId: string, metadata?: Metadata | null): Promise<void> {
     let continueMenu = true;
 
     while (continueMenu) {
@@ -166,6 +166,15 @@ async function showDeletionMenu (results: FileResult[], clientId: string): Promi
 
                 // Group links by the specified number per row
                 let linkText = '';
+                // if metadata is supplied add id to the text
+                if (metadata) {
+                    if (metadata.videoTitle) {
+                        linkText += `${metadata.videoTitle}\n`;
+                    }
+                    if (metadata.videoUrl) {
+                        linkText += `Source: <${metadata.videoUrl}>\n`;
+                    }
+                }
                 for (let i = 0; i < validLinks.length; i++) {
                     // Add one link per row
                     linkText += validLinks[i] + '\n';
