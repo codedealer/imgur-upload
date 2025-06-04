@@ -3,6 +3,7 @@ import axios from 'axios';
 import { DeleteResult, FileResult, Metadata } from './types';
 import { copy } from 'copy-paste';
 import { pause } from "./utils";
+import { uploadFiles } from "./uploadFiles";
 
 // Delete an image using the deletehash
 async function deleteImage (deletehash: string, clientId: string): Promise<DeleteResult> {
@@ -28,8 +29,10 @@ async function showDeletionMenu (results: FileResult[], clientId: string, metada
     while (continueMenu) {
         // Only show deletion options if we have successful uploads
         const successfulUploads = results.filter(r => r.deletehash);
-        if (successfulUploads.length === 0) {
-            console.log('No successful uploads to manage.');
+        const failedUploads = results.filter(r => r.error);
+
+        if (successfulUploads.length === 0 && failedUploads.length === 0) {
+            console.log('No uploads to manage.');
             await pause();
             return;
         }
@@ -38,22 +41,34 @@ async function showDeletionMenu (results: FileResult[], clientId: string, metada
         const invalidUploads = successfulUploads.filter(r => r.isValid === false);
 
         // Build menu choices
-        const menuChoices = [
-            {name: 'Delete all uploads', value: 'deleteAll'},
-            {name: 'Select uploads to delete', value: 'selectDelete'}
-        ];
+        const menuChoices = [];
 
-        // Add option to delete invalid uploads only if there are any
-        if (invalidUploads.length > 0) {
+        // Add retry option if there are failed uploads
+        if (failedUploads.length > 0) {
             menuChoices.push({
-                name: `Delete invalid uploads (${invalidUploads.length})`,
-                value: 'deleteInvalid'
+                name: `Retry failed uploads (${failedUploads.length})`,
+                value: 'retryFailed'
             });
         }
 
         const validUploads = successfulUploads.filter(r => r.isValid);
         if (validUploads.length > 0) {
-            menuChoices.unshift({ name: 'Copy valid links to clipboard', value: 'copyLinks' });
+            menuChoices.push({ name: 'Copy valid links to clipboard', value: 'copyLinks' });
+        }
+
+        if (successfulUploads.length > 0) {
+            menuChoices.push(
+              { name: 'Delete all uploads', value: 'deleteAll' },
+              { name: 'Select uploads to delete', value: 'selectDelete' }
+            );
+
+            // Add option to delete invalid uploads only if there are any
+            if (invalidUploads.length > 0) {
+                menuChoices.push({
+                    name: `Delete invalid uploads (${invalidUploads.length})`,
+                    value: 'deleteInvalid'
+                });
+            }
         }
 
         // Add quit option
@@ -68,7 +83,44 @@ async function showDeletionMenu (results: FileResult[], clientId: string, metada
             }
         ]);
 
-        if (action === 'deleteAll') {
+        if (action === 'retryFailed') {
+            // Prompt user to select which failed uploads to retry
+            const { selectedToRetry } = await inquirer.prompt([
+                {
+                    type: 'checkbox',
+                    name: 'selectedToRetry',
+                    message: 'Select files to retry:',
+                    choices: failedUploads.map((upload, i) => ({
+                        name: `${i + 1}: ${upload.file}`,
+                        value: upload.file
+                    }))
+                }
+            ]);
+
+            const toRetry = selectedToRetry as string[];
+            if (toRetry.length > 0) {
+                console.log('Retrying selected uploads...');
+                console.log(`Retrying ${toRetry.length} files...`);
+
+                // Remove selected failed uploads from results
+                const failedIndices = toRetry.map(file =>
+                  results.findIndex(r => r.file === file)
+                );
+                failedIndices.sort((a, b) => b - a).forEach(index => {
+                    if (index !== -1) results.splice(index, 1);
+                });
+
+                // Retry uploading the selected files
+                const retryResults = await uploadFiles(toRetry);
+
+                // Add the retry results to the main results array
+                results.push(...retryResults);
+
+                console.log('Retry completed.');
+            } else {
+                console.log('No files selected for retry.');
+            }
+        } else if (action === 'deleteAll') {
             console.log('Deleting all uploads...');
             const deletedIndices: number[] = [];
 

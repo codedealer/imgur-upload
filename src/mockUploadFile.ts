@@ -21,6 +21,12 @@ async function mockUploadFile (
     const stats = fs.statSync(filePath);
     const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
 
+    // Simulate a random network error with a 10% chance
+    if (Math.random() < 0.5) {
+      bar.stop();
+      throw new Error('Mock network error occurred during upload');
+    }
+
     // Check file size limit if specified
     if (MAX_FILE_SIZE_MB > 0 && parseFloat(fileSizeMB) > MAX_FILE_SIZE_MB) {
       bar.stop();
