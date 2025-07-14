@@ -4,30 +4,17 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "program": "${workspaceFolder}\\dist\\index.js",
-      "preLaunchTask": "tsc: build - tsconfig.json",
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ]
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug TypeScript (ts-node, example.mp4)",
+      "name": "Debug TypeScript (ts-node)",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "exec",
         "ts-node",
         "src/index.ts",
-        "example.mp4"
+        "https://imgur.com/xGmYK9K",
+        "https://imgur.com/EM63j5H"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
