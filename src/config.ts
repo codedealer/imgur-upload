@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
 
 export interface ImgurConfig {
   clientId: string;
@@ -10,7 +11,25 @@ export interface ImgurConfig {
   concurrentUploads: number;
 }
 
+let configCache: ImgurConfig | null = null;
+
 export function loadConfig (): ImgurConfig {
+  // If config is already loaded, return it
+  if (configCache) {
+    return configCache;
+  }
+
+  // Configure environment variables if not already done
+  if (!process.env.CLIENT_ID) {
+    if (process.env.NODE_ENV === 'production') {
+      // In production, look for .env in the same directory as the compiled script
+      dotenv.config({ path: path.join(__dirname, '.env') });
+    } else {
+      // In development, use the default .env in project root
+      dotenv.config();
+    }
+  }
+
   const isPackaged = !!('pkg' in process || process.versions.pkg);
   let config: Partial<ImgurConfig> = {};
 
@@ -43,7 +62,7 @@ export function loadConfig (): ImgurConfig {
   }
 
   // Fall back to environment variables for any missing options
-  return {
+  configCache = {
     clientId: config.clientId || process.env.CLIENT_ID || '',
     uploadTimeout: config.uploadTimeout || parseInt(process.env.UPLOAD_TIMEOUT || '30000'),
     verifyUpload: config.verifyUpload !== undefined
@@ -55,7 +74,18 @@ export function loadConfig (): ImgurConfig {
       : process.env.TEST_MODE === 'true',
     concurrentUploads: Math.max(1, config.concurrentUploads || parseInt(process.env.CONCURRENT_UPLOADS || '1')),
   };
+
+  return configCache;
 }
 
-// Default export for convenience
-export default loadConfig();
+// Lazy-loaded config using a getter
+const config = {
+  get clientId() { return loadConfig().clientId; },
+  get uploadTimeout() { return loadConfig().uploadTimeout; },
+  get verifyUpload() { return loadConfig().verifyUpload; },
+  get maxFileSizeMb() { return loadConfig().maxFileSizeMb; },
+  get testMode() { return loadConfig().testMode; },
+  get concurrentUploads() { return loadConfig().concurrentUploads; },
+};
+
+export default config;
