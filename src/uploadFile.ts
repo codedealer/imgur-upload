@@ -1,10 +1,10 @@
 import path from "path";
 import FormData from "form-data";
 import fs from "fs";
-import axios from "axios";
 import { ProgressBars, UploadResult } from "./types";
 import config from "./config";
 import { trimFileName } from "./utils";
+import { axiosClient } from "./axiosClient";
 
 async function uploadFile (
   filePath: string,
@@ -35,13 +35,13 @@ async function uploadFile (
         form.append('video', fs.createReadStream(filePath));
         form.append('type', 'file');
 
-        const response = await axios.post('https://api.imgur.com/3/image', form, {
+        const response = await axiosClient.post('https://api.imgur.com/3/image', form, {
             headers: {
                 ...form.getHeaders(),
                 'Authorization': `Client-ID ${config.clientId}`
             },
             timeout: TIMEOUT,
-            onUploadProgress: (progressEvent) => {
+            onUploadProgress: (progressEvent: any) => {
                 const total = progressEvent.total && progressEvent.total > 0 ? progressEvent.total : 1;
                 const percent = Math.round(
                   (progressEvent.loaded / total) * 100

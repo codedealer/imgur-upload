@@ -1,14 +1,14 @@
 import inquirer from 'inquirer';
-import axios from 'axios';
 import { DeleteResult, FileResult, Metadata } from './types';
 import { copy } from 'copy-paste';
 import { pause } from "./utils";
 import { uploadFiles } from "./uploadFiles";
+import { axiosClient } from "./axiosClient";
 
 // Delete an image using the deletehash
 async function deleteImage (deletehash: string, clientId: string): Promise<DeleteResult> {
     try {
-        const response = await axios.delete(`https://api.imgur.com/3/image/${deletehash}`, {
+        const response = await axiosClient.delete(`https://api.imgur.com/3/image/${deletehash}`, {
             headers: {
                 'Authorization': `Client-ID ${clientId}`
             }
@@ -127,7 +127,7 @@ async function showDeletionMenu (results: FileResult[], clientId: string, metada
             for (let i = 0; i < successfulUploads.length; i++) {
                 const upload = successfulUploads[i];
                 if (!upload.deletehash) continue;
-                
+
                 const result = await deleteImage(upload.deletehash, clientId);
                 console.log(`${upload.link}: ${result.success ? 'Deleted' : `Failed - ${result.error}`}`);
 
@@ -191,7 +191,7 @@ async function showDeletionMenu (results: FileResult[], clientId: string, metada
 
             for (const upload of invalidUploads) {
                 if (!upload.deletehash) continue;
-                
+
                 const result = await deleteImage(upload.deletehash, clientId);
                 console.log(`${upload.link}: ${result.success ? 'Deleted' : `Failed - ${result.error}`}`);
 

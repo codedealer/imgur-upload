@@ -1,4 +1,4 @@
-import axios from "axios";
+import { axiosClient } from "./axiosClient";
 
 /**
  * Verifies if an Imgur link is valid by checking the actual webpage
@@ -8,7 +8,7 @@ import axios from "axios";
 async function verifyImgurLink (imageId: string): Promise<boolean> {
   try {
     // Request the actual webpage instead of using the API
-    const response = await axios.get(`https://imgur.com/${imageId}`, {
+    const response = await axiosClient.get(`https://imgur.com/${imageId}`, {
       // Set timeout to avoid hanging on slow requests
       timeout: 10000
     });
