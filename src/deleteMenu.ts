@@ -4,14 +4,27 @@ import { copy } from 'copy-paste';
 import { pause } from "./utils";
 import { uploadFiles } from "./uploadFiles";
 import { axiosClient } from "./axiosClient";
+import config from './config';
 
 // Delete an image using the deletehash
 async function deleteImage (deletehash: string, clientId: string): Promise<DeleteResult> {
     try {
-        const response = await axiosClient.delete(`https://api.imgur.com/3/image/${deletehash}`, {
-            headers: {
-                'Authorization': `Client-ID ${clientId}`
-            }
+        // Determine the delete URL based on proxy configuration
+        const deleteUrl = config.gcProxy
+            ? `${config.gcProxy}/3/image/${deletehash}`
+            : `https://api.imgur.com/3/image/${deletehash}`;
+
+        const headers: any = {
+            'Authorization': `Client-ID ${clientId}`
+        };
+
+        // Add proxy auth header if using proxy
+        if (config.gcProxy && config.proxySecret) {
+            headers['X-Proxy-Auth'] = config.proxySecret;
+        }
+
+        const response = await axiosClient.delete(deleteUrl, {
+            headers
         });
         return {success: true, status: response.data.status};
     } catch (error: any) {

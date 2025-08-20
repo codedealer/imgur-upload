@@ -1,0 +1,17 @@
+# Ignore node_modules and other unnecessary files
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.nyc_output
+coverage
+.nyc_output
+.coverage
+.coverage/
+.env
+.env.local
+.env.production.local
+.env.development.local
+*.log

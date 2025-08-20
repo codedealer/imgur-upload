@@ -13,6 +13,7 @@ function createAxiosClient(): AxiosInstance {
         if (config.url) {
             const proxyUrl = getProxyForUrl(config.url);
             if (proxyUrl) {
+                console.log(`Using proxy: ${proxyUrl}`);
                 config.httpsAgent = new HttpsProxyAgent(proxyUrl);
             }
         }

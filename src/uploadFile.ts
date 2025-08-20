@@ -35,11 +35,23 @@ async function uploadFile (
         form.append('video', fs.createReadStream(filePath));
         form.append('type', 'file');
 
-        const response = await axiosClient.post('https://api.imgur.com/3/image', form, {
-            headers: {
-                ...form.getHeaders(),
-                'Authorization': `Client-ID ${config.clientId}`
-            },
+        // Determine the upload URL based on proxy configuration
+        const uploadUrl = config.gcProxy
+            ? `${config.gcProxy}/3/image`
+            : 'https://api.imgur.com/3/image';
+
+        const headers: any = {
+            ...form.getHeaders(),
+            'Authorization': `Client-ID ${config.clientId}`
+        };
+
+        // Add proxy auth header if using proxy
+        if (config.gcProxy && config.proxySecret) {
+            headers['X-Proxy-Auth'] = config.proxySecret;
+        }
+
+        const response = await axiosClient.post(uploadUrl, form, {
+            headers,
             timeout: TIMEOUT,
             onUploadProgress: (progressEvent: any) => {
                 const total = progressEvent.total && progressEvent.total > 0 ? progressEvent.total : 1;

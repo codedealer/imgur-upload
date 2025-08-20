@@ -9,6 +9,8 @@ export interface ImgurConfig {
   maxFileSizeMb: number;
   testMode: boolean;
   concurrentUploads: number;
+  gcProxy?: string;
+  proxySecret?: string;
 }
 
 let configCache: ImgurConfig | null = null;
@@ -51,6 +53,8 @@ export function loadConfig (): ImgurConfig {
           maxFileSizeMb: 0,
           testMode: false,
           concurrentUploads: 1,
+          gcProxy: undefined,
+          proxySecret: undefined,
         };
         fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
         console.log(`Default configuration file created at ${configPath}. Please update it with correct values.`);
@@ -73,6 +77,8 @@ export function loadConfig (): ImgurConfig {
       ? config.testMode
       : process.env.TEST_MODE === 'true',
     concurrentUploads: Math.max(1, config.concurrentUploads || parseInt(process.env.CONCURRENT_UPLOADS || '1')),
+    gcProxy: config.gcProxy || process.env.GC_PROXY || undefined,
+    proxySecret: config.proxySecret || process.env.PROXY_SECRET || undefined,
   };
 
   return configCache;
@@ -86,6 +92,8 @@ const config = {
   get maxFileSizeMb() { return loadConfig().maxFileSizeMb; },
   get testMode() { return loadConfig().testMode; },
   get concurrentUploads() { return loadConfig().concurrentUploads; },
+  get gcProxy() { return loadConfig().gcProxy; },
+  get proxySecret() { return loadConfig().proxySecret; },
 };
 
 export default config;

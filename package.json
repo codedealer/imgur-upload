@@ -8,7 +8,8 @@
     "build": "tsc && copy .env.production dist\\.env",
     "package": "pnpm run clean && pnpm run build && pkg . --out-path bin",
     "dev": "ts-node src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test-proxy": "ts-node src/testProxy.ts"
   },
   "keywords": [],
   "author": "",

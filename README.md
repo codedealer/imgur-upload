@@ -71,9 +71,78 @@ VERIFY_UPLOAD=false
 MAX_FILE_SIZE_MB=200
 CONCURRENT_UPLOADS=1
 HTTPS_PROXY=http://127.0.0.1:8080  # Optional
+GC_PROXY=https://your-proxy-service.run.app  # Optional Google Cloud Run proxy
+PROXY_SECRET=your_generated_secret_key  # Required when using GC_PROXY
 ```
 
-## Features
+## Google Cloud Run Proxy
+
+This project includes a Google Cloud Run proxy server that can be deployed to handle API requests on your behalf. This is useful for:
+
+- Centralized API credential management
+- Request logging and monitoring
+- Avoiding direct API calls from your local machine
+- Secured access with authorization tokens
+
+### Deployment Options
+
+#### Option 1: GitHub Actions (Recommended - No local tools required)
+
+1. **Fork this repository** to your GitHub account
+
+2. **Set up Google Cloud secrets** in your GitHub repository:
+   - Go to Settings → Secrets and variables → Actions
+   - Add `GCP_PROJECT_ID` with your Google Cloud project ID
+   - Add `GCP_SA_KEY` with your service account JSON key (with Cloud Run permissions)
+
+3. **Deploy via GitHub Actions**:
+   - Go to Actions tab in your repository
+   - Run "Deploy Imgur Proxy to Cloud Run" workflow
+   - Enter your project ID and region when prompted
+   - The workflow will auto-generate a proxy secret
+
+4. **Configure your client**:
+   ```bash
+   set GC_PROXY=https://your-service-url.run.app
+   set PROXY_SECRET=the_generated_secret_from_workflow
+   ```
+
+#### Option 2: Local Deployment (Requires gcloud + Docker)
+
+1. **Deploy the proxy server:**
+   ```bash
+   # Linux/macOS
+   chmod +x deploy.sh
+   ./deploy.sh your-project-id us-central1
+
+   # Windows
+   deploy.bat your-project-id us-central1
+   ```
+
+2. **Configure the client to use the proxy:**
+   ```bash
+   export GC_PROXY=https://your-service-url.run.app
+   export PROXY_SECRET=your_proxy_secret
+   ```
+
+### Proxy Security
+
+The proxy server uses an authorization token (`PROXY_SECRET`) to prevent unauthorized access:
+
+- **Auto-generated**: A random 64-character hex string is generated during deployment
+- **Custom**: You can provide your own secret during GitHub Actions deployment
+- **Required**: All requests to the proxy must include `X-Proxy-Auth` header with the secret
+
+When `GC_PROXY` and `PROXY_SECRET` are set, all upload and delete requests will be routed through your secured proxy server.
+
+### Proxy Features
+
+- **Health check endpoint:** `GET /health`
+- **Upload proxy:** `POST /3/image` (with auth)
+- **Delete proxy:** `DELETE /3/image/:deleteHash` (with auth)
+- **Request logging:** Tracks uploads and deletes with client ID
+- **Auto-scaling:** Handles traffic spikes automatically
+- **Low resource usage:** Only 256Mi RAM, scales to zero when unused## Features
 
 ### Upload Mode
 - Upload local video files to Imgur
