@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "imgur-proxy",
   "functions": {
     "api/**/*.ts": {
       "maxDuration": 60
@@ -42,8 +41,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "PROXY_SECRET": "@proxy-secret"
-  }
+  ]
 }
