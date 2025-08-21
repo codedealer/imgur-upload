@@ -6,9 +6,16 @@ Prerequisites
 1. GitHub account
 2. Vercel account (free) — https://vercel.com
 
+
 Overview
-- Recommended: use the included GitHub Actions workflow to build and deploy the `proxy/` folder to Vercel. No local tools required.
+- Recommended: use the included GitHub Actions workflow to deploy the `proxy/` folder to Vercel. No local tools required.
 - Alternative: use the Vercel CLI locally (if you prefer).
+
+**Important: Vercel Project Settings**
+- In the Vercel dashboard, set the **Root Directory** to `proxy`.
+- Set **Framework Preset** to `Other`.
+- Leave **Build Command** and **Output Directory** blank (empty) so Vercel will detect serverless functions in `api/` automatically.
+- The only script in `proxy/package.json` is `dev` (for local development). There is no build or start script.
 
 1) Create a Vercel project
 - Sign in to Vercel and create a new project. You can import this repo (fork first) or create an empty project and connect it later.
@@ -28,7 +35,7 @@ In your fork, go to Settings → Secrets and variables → Actions and add:
 - In GitHub, go to Actions → "Deploy Imgur Proxy to Vercel"
 - Click "Run workflow". Optionally provide a `proxy_secret`; leave empty to auto-generate.
 - The workflow will:
-   - build `proxy/` with pnpm
+   - install dependencies in `proxy/` with pnpm
    - deploy to Vercel using the `vercel` CLI
    - set `PROXY_SECRET` as a Vercel environment variable (production)
 
@@ -59,10 +66,14 @@ pnpm run test-proxy
 
 You should see the health check response if the proxy is reachable.
 
+
 Troubleshooting
-- Workflow failed: check GitHub Actions logs and verify that `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` are correct.
-- Proxy health check failed: wait a minute for Vercel to propagate, then check the deployment URL in the Vercel dashboard.
-- Invalid proxy authorization: ensure `PROXY_SECRET` in your client matches the one set in Vercel.
+- **Workflow failed:** check GitHub Actions logs and verify that `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` are correct.
+- **Proxy health check failed:** wait a minute for Vercel to propagate, then check the deployment URL in the Vercel dashboard.
+- **Invalid proxy authorization:** ensure `PROXY_SECRET` in your client matches the one set in Vercel.
+- **Vercel build error: `No Output Directory named 'output' found after the Build completed.`**
+   - This means Vercel is expecting a static build output. To fix: in your Vercel project settings, make sure **Build Command** and **Output Directory** are both blank, and that your Root Directory is set to `proxy`. Vercel will then detect and deploy the serverless functions in `api/` automatically.
+
 
 Local deployment (optional)
 - If you prefer to deploy locally with the Vercel CLI:
