@@ -51,7 +51,6 @@ jobs:
 
     - name: Deploy to Vercel
       run: |
-        cd proxy
         vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
       env:
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -59,13 +58,11 @@ jobs:
 
     - name: Set environment variables
       run: |
-        cd proxy
         vercel env add PROXY_SECRET production "${{ steps.proxy-secret.outputs.SECRET }}" --token=${{ secrets.VERCEL_TOKEN }} --yes || echo "Environment variable may already exist"
 
     - name: Get deployment URL
       id: get-url
       run: |
-        cd proxy
         URL=$(vercel ls --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} | grep imgur-proxy | head -1 | awk '{print $2}')
         if [ -z "$URL" ]; then
           URL="https://imgur-proxy.vercel.app"
