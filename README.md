@@ -4,7 +4,16 @@ A command-line tool for uploading videos to Imgur and re-uploading from existing
 
 ## Setup
 
-1. **Install dependencies:**
+1. **IWhen `GC_PROXY` and `PROXY_SECRET` are set, all upload and delete requests will be routed through your secured proxy server.
+
+### Proxy Features
+
+- **Health check endpoint:** `GET /health`
+- **Upload proxy:** `POST /api/3/image` (with auth)
+- **Delete proxy:** `DELETE /api/3/image/[deleteHash]` (with auth)
+- **Request logging:** Tracks uploads and deletes with client ID
+- **Serverless auto-scaling:** Handles traffic spikes automatically
+- **Free tier friendly:** Generous usage limits, scales to zero when unusedendencies:**
    ```bash
    pnpm install
    ```
@@ -71,18 +80,19 @@ VERIFY_UPLOAD=false
 MAX_FILE_SIZE_MB=200
 CONCURRENT_UPLOADS=1
 HTTPS_PROXY=http://127.0.0.1:8080  # Optional
-GC_PROXY=https://your-proxy-service.run.app  # Optional Google Cloud Run proxy
+GC_PROXY=https://your-proxy-service.vercel.app  # Optional Vercel serverless proxy
 PROXY_SECRET=your_generated_secret_key  # Required when using GC_PROXY
 ```
 
-## Google Cloud Run Proxy
+## Vercel Serverless Proxy
 
-This project includes a Google Cloud Run proxy server that can be deployed to handle API requests on your behalf. This is useful for:
+This project includes a Vercel serverless proxy that can be deployed to handle API requests on your behalf. This is useful for:
 
 - Centralized API credential management
 - Request logging and monitoring
 - Avoiding direct API calls from your local machine
 - Secured access with authorization tokens
+- **Free deployment** with generous usage limits
 
 ### Deployment Options
 
@@ -90,42 +100,46 @@ This project includes a Google Cloud Run proxy server that can be deployed to ha
 
 1. **Fork this repository** to your GitHub account
 
-2. **Set up Google Cloud secrets** in your GitHub repository:
+2. **Set up Vercel secrets** in your GitHub repository:
    - Go to Settings → Secrets and variables → Actions
-   - Add `GCP_PROJECT_ID` with your Google Cloud project ID
-   - Add `GCP_SA_KEY` with your service account JSON key (with Cloud Run permissions)
+   - Add `VERCEL_TOKEN` with your Vercel API token ([get it here](https://vercel.com/account/tokens))
+   - Add `VERCEL_ORG_ID` with your Vercel organization ID
+   - Add `VERCEL_PROJECT_ID` with your Vercel project ID (create project first on Vercel)
 
 3. **Deploy via GitHub Actions**:
    - Go to Actions tab in your repository
-   - Run "Deploy Imgur Proxy to Cloud Run" workflow
-   - Enter your project ID and region when prompted
+   - Run "Deploy Imgur Proxy to Vercel" workflow
    - The workflow will auto-generate a proxy secret
 
 4. **Configure your client**:
    ```bash
-   set GC_PROXY=https://your-service-url.run.app
+   set GC_PROXY=https://your-project.vercel.app
    set PROXY_SECRET=the_generated_secret_from_workflow
    ```
 
-#### Option 2: Local Deployment (Requires gcloud + Docker)
+#### Option 2: Local Deployment (Requires Vercel CLI)
 
-1. **Deploy the proxy server:**
+1. **Install Vercel CLI:**
    ```bash
-   # Linux/macOS
-   chmod +x deploy.sh
-   ./deploy.sh your-project-id us-central1
-
-   # Windows
-   deploy.bat your-project-id us-central1
+   npm install -g vercel
    ```
 
-2. **Configure the client to use the proxy:**
+2. **Deploy the proxy:**
    ```bash
-   export GC_PROXY=https://your-service-url.run.app
+   cd proxy
+   vercel --prod
+   ```
+
+3. **Set environment variables:**
+   ```bash
+   vercel env add PROXY_SECRET production your_secret_here
+   ```
+
+4. **Configure your client:**
+   ```bash
+   export GC_PROXY=https://your-project.vercel.app
    export PROXY_SECRET=your_proxy_secret
-   ```
-
-### Proxy Security
+   ```### Proxy Security
 
 The proxy server uses an authorization token (`PROXY_SECRET`) to prevent unauthorized access:
 

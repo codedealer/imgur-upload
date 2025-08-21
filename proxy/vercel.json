@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "name": "imgur-proxy",
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/3/image",
+      "destination": "/api/3/image"
+    },
+    {
+      "source": "/3/image/(.*)",
+      "destination": "/api/3/image/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization, X-Proxy-Auth"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "PROXY_SECRET": "@proxy-secret"
+  }
+}
