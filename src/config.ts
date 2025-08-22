@@ -21,15 +21,14 @@ export function loadConfig (): ImgurConfig {
     return configCache;
   }
 
-  // Configure environment variables if not already done
-  if (!process.env.CLIENT_ID) {
-    if (process.env.NODE_ENV === 'production') {
-      // In production, look for .env in the same directory as the compiled script
-      dotenv.config({ path: path.join(__dirname, '.env') });
-    } else {
-      // In development, use the default .env in project root
-      dotenv.config();
-    }
+  // Configure environment variables - always load .env files
+  // Environment variables take precedence over .env file values
+  if (process.env.NODE_ENV === 'production') {
+    // In production, look for .env in the same directory as the compiled script
+    dotenv.config({ path: path.join(__dirname, '.env') });
+  } else {
+    // In development, try .env
+    dotenv.config();
   }
 
   const isPackaged = !!('pkg' in process || process.versions.pkg);

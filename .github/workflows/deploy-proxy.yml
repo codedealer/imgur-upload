@@ -49,16 +49,16 @@ jobs:
     - name: Install Vercel CLI
       run: npm install -g vercel@latest
 
+    - name: Set environment variables
+      run: |
+        vercel env add PROXY_SECRET production "${{ steps.proxy-secret.outputs.SECRET }}" --token=${{ secrets.VERCEL_TOKEN }} || echo "Environment variable may already exist"
+
     - name: Deploy to Vercel
       run: |
         vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
       env:
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-    - name: Set environment variables
-      run: |
-        vercel env add PROXY_SECRET production "${{ steps.proxy-secret.outputs.SECRET }}" --token=${{ secrets.VERCEL_TOKEN }} --yes || echo "Environment variable may already exist"
 
     - name: Get deployment URL
       id: get-url
