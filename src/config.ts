@@ -11,6 +11,8 @@ export interface ImgurConfig {
   concurrentUploads: number;
   gcProxy?: string;
   proxySecret?: string;
+  // proxy auth mode: 'header' (X-Proxy-Auth) or 'hmac' (signed headers)
+  proxyAuthMode?: 'header' | 'hmac';
 }
 
 let configCache: ImgurConfig | null = null;
@@ -54,6 +56,7 @@ export function loadConfig (): ImgurConfig {
           concurrentUploads: 1,
           gcProxy: undefined,
           proxySecret: undefined,
+    proxyAuthMode: 'header',
         };
         fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
         console.log(`Default configuration file created at ${configPath}. Please update it with correct values.`);
@@ -78,6 +81,7 @@ export function loadConfig (): ImgurConfig {
     concurrentUploads: Math.max(1, config.concurrentUploads || parseInt(process.env.CONCURRENT_UPLOADS || '1')),
     gcProxy: config.gcProxy || process.env.GC_PROXY || undefined,
     proxySecret: config.proxySecret || process.env.PROXY_SECRET || undefined,
+  proxyAuthMode: (config.proxyAuthMode || (process.env.PROXY_AUTH_MODE as any) || 'header') as 'header' | 'hmac',
   };
 
   return configCache;
@@ -93,6 +97,7 @@ const config = {
   get concurrentUploads() { return loadConfig().concurrentUploads; },
   get gcProxy() { return loadConfig().gcProxy; },
   get proxySecret() { return loadConfig().proxySecret; },
+  get proxyAuthMode() { return loadConfig().proxyAuthMode; },
 };
 
 export default config;

@@ -5,6 +5,7 @@ import { pause } from "./utils";
 import { uploadFiles } from "./uploadFiles";
 import { axiosClient } from "./axiosClient";
 import config from './config';
+import { signRequest, sha256Hex } from './proxyAuth';
 
 // Delete an image using the deletehash
 async function deleteImage (deletehash: string, clientId: string): Promise<DeleteResult> {
@@ -20,7 +21,18 @@ async function deleteImage (deletehash: string, clientId: string): Promise<Delet
 
         // Add proxy auth header if using proxy
         if (config.gcProxy && config.proxySecret) {
-            headers['X-Proxy-Auth'] = config.proxySecret;
+            if (config.proxyAuthMode === 'hmac') {
+                const url = new URL(deleteUrl);
+                const pathOnly = url.pathname;
+                const bodyHash = sha256Hex('');
+                const h = signRequest('default', config.proxySecret, 'DELETE', pathOnly, bodyHash);
+                headers['x-proxy-key-id'] = h['x-proxy-key-id'];
+                headers['x-proxy-signature'] = h['x-proxy-signature'];
+                headers['x-proxy-timestamp'] = h['x-proxy-timestamp'];
+                headers['x-proxy-content-sha256'] = bodyHash;
+            } else {
+                headers['X-Proxy-Auth'] = config.proxySecret;
+            }
         }
 
         const response = await axiosClient.delete(deleteUrl, {

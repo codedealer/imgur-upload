@@ -5,6 +5,9 @@ import { ProgressBars, UploadResult } from "./types";
 import config from "./config";
 import { trimFileName } from "./utils";
 import { axiosClient } from "./axiosClient";
+import { signRequest, sha256Hex } from "./proxyAuth";
+import fsPromises from 'fs/promises';
+import crypto from 'crypto';
 
 async function uploadFile (
   filePath: string,
@@ -31,9 +34,9 @@ async function uploadFile (
             };
         }
 
-        const form = new FormData();
-        form.append('video', fs.createReadStream(filePath));
-        form.append('type', 'file');
+    const form = new FormData();
+    form.append('video', fs.createReadStream(filePath));
+    form.append('type', 'file');
 
         // Determine the upload URL based on proxy configuration
         const uploadUrl = config.gcProxy
@@ -45,9 +48,22 @@ async function uploadFile (
             'Authorization': `Client-ID ${config.clientId}`
         };
 
-        // Add proxy auth header if using proxy
+        // Add proxy authentication if using proxy
         if (config.gcProxy && config.proxySecret) {
-            headers['X-Proxy-Auth'] = config.proxySecret;
+            if (config.proxyAuthMode === 'hmac') {
+                const url = new URL(uploadUrl);
+                const pathOnly = url.pathname; // e.g. /3/image
+                // Compute SHA-256 of the file content for signing
+                const fileBuffer = await fsPromises.readFile(filePath);
+                const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+                const h = signRequest('default', config.proxySecret, 'POST', pathOnly, fileHash);
+                headers['x-proxy-key-id'] = h['x-proxy-key-id'];
+                headers['x-proxy-signature'] = h['x-proxy-signature'];
+                headers['x-proxy-timestamp'] = h['x-proxy-timestamp'];
+                headers['x-proxy-content-sha256'] = fileHash;
+            } else {
+                headers['X-Proxy-Auth'] = config.proxySecret;
+            }
         }
 
         const response = await axiosClient.post(uploadUrl, form, {
