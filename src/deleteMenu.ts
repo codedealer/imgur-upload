@@ -245,6 +245,9 @@ async function showDeletionMenu (results: FileResult[], clientId: string, metada
                 let linkText = '';
                 // if metadata is supplied add id to the text
                 if (metadata) {
+                    if (metadata.titleSuffix) {
+                        linkText += `${metadata.titleSuffix}\n`;
+                    }
                     if (metadata.videoTitle) {
                         linkText += `${metadata.videoTitle}\n`;
                     }
